@@ -13,10 +13,9 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(serial REQUIRED)
 
 add_executable(sensor_reader_node src/sensor_reader_node.cpp)
-ament_target_dependencies(sensor_reader_node rclcpp std_msgs serial)
+ament_target_dependencies(sensor_reader_node rclcpp std_msgs)
 
 add_executable(imu_publisher_node src/imu_publisher_node.cpp)
 ament_target_dependencies(imu_publisher_node rclcpp std_msgs sensor_msgs)
@@ -25,18 +24,5 @@ install(TARGETS
   sensor_reader_node
   imu_publisher_node
   DESTINATION lib/${PROJECT_NAME})
-
-
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
-  set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-endif()
 
 ament_package()

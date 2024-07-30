@@ -104,5 +104,5 @@ Contributions are welcome! Please open an issue or submit a pull request.
 ## Acknowledgments
 
 - Thanks to the [ROS 2 community](https://discourse.ros.org/) for their support.
-- Thanks to the developers of the [serial](http://wjwwood.io/serial/) library.
-```
+- This package was inspired by the [Arduino Nano 33 BLE Sense](https://store.arduino.cc/usa/nano-33-ble-sense) board.
+- [Libserial](https://github.com/crayzeewulf/libserial) is used to read data from the serial port.
