@@ -16,7 +16,6 @@ class IMUOrientation {
                     w * q.y - x * q.z + y * q.w + z * q.x,
                     w * q.z + x * q.y - y * q.x + z * q.w};
             }
-
             void normalize(){
                 double norm = std::sqrt(w * w + x * x + y * y + z * z);
                 w /= norm;
@@ -27,18 +26,15 @@ class IMUOrientation {
         };
 
         IMUOrientation(){
-            // Initialize the quaternion representing the initial orientation
             orientation = {1.0, 0.0, 0.0, 0.0};
         }
 
-        void updateWithGyroData(const std::array<double, 3> &gyro, double dt){
+        void update(const std::array<double, 3> &gyro, double dt){
             orientation = integrateGyro(gyro, orientation, dt);
             orientation.normalize();
         }
 
-        Quaternion getCurrentQuaternion() const{
-            return orientation;
-        }
+        Quaternion get_quaterion() const{ return orientation; }
 
     private:
         Quaternion orientation;
@@ -67,47 +63,62 @@ class IMUOrientation {
 
 class ImuOrientationNode : public rclcpp::Node {
     private:
-        rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr subscription_;
-        rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_;
+        rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr gyro_sub_;
+        rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr acc_sub_;
+        rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr ori_sub_;
+        rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
         IMUOrientation imu_orientation;
+        std::mutex mutex_;
+        sensor_msgs::msg::Imu imu_msg_;
         rclcpp::Time last_time_;
 
     public:
         ImuOrientationNode() : Node("imu_orientation_node") {
-            subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>("gyro", 10, std::bind(&ImuOrientationNode::acc_callback, this, std::placeholders::_1));
-            publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("/imu", 10);
+            gyro_sub_ = this->create_subscription<std_msgs::msg::Float32MultiArray>("gyro", 10, std::bind(&ImuOrientationNode::gyro_callback, this, std::placeholders::_1));
+            imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("/imu", 10);
             last_time_ = this->now();
         }
 
     private:
-        void acc_callback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
-            if (msg->data.size() != 3) {
-                RCLCPP_WARN(this->get_logger(), "Received data does not have exactly 3 elements.");
-                return;
-            } else {
-                RCLCPP_INFO(this->get_logger(), "Received data: %f, %f, %f", msg->data[0], msg->data[1], msg->data[2]);
-            }
+        void gyro_callback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
+            RCLCPP_INFO(this->get_logger(), "Received data: %f, %f, %f", msg->data[0], msg->data[1], msg->data[2]);
             std::array<double, 3> gyro_data = {msg->data[0], msg->data[1], msg->data[2]};
             auto current_time = this->now();
             auto delta_time = current_time - last_time_;
             double dt = delta_time.seconds();
             last_time_ = current_time;
             // Update orientation with the actual delta time
-            imu_orientation.updateWithGyroData(gyro_data, dt);
+            imu_orientation.update(gyro_data, dt);
+            std::lock_guard<std::mutex> lock(mutex_);
             // Create IMU message
-            auto imu_msg = sensor_msgs::msg::Imu();
-            auto quaternion = imu_orientation.getCurrentQuaternion();
-            imu_msg.orientation.x = quaternion.x;
-            imu_msg.orientation.y = quaternion.y;
-            imu_msg.orientation.z = quaternion.z;
-            imu_msg.orientation.w = quaternion.w;
+            imu_msg_.angular_velocity.x = gyro_data[0];
+            imu_msg_.angular_velocity.y = gyro_data[1];
+            imu_msg_.angular_velocity.z = gyro_data[2];
+            auto quaternion = imu_orientation.get_quaterion();
+            imu_msg_.orientation.x = quaternion.x;
+            imu_msg_.orientation.y = quaternion.y;
+            imu_msg_.orientation.z = quaternion.z;
+            imu_msg_.orientation.w = quaternion.w;
             // Publish IMU message
-            publisher_->publish(imu_msg);
+            publish_imu();
+        }
+        void accCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
+            std::lock_guard<std::mutex> lock(mutex_);
+            imu_msg_.linear_acceleration.x = msg->data[0];
+            imu_msg_.linear_acceleration.y = msg->data[1];
+            imu_msg_.linear_acceleration.z = msg->data[2];
+            publish_imu();
+        }
+
+        void publish_imu() {
+            imu_msg_.header.stamp = this->now();
+            imu_msg_.header.frame_id = "imu_frame";
+            imu_pub_->publish(imu_msg_);
+            RCLCPP_INFO(this->get_logger(), "Published IMU data");
         }
    };
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
     rclcpp::spin(std::make_shared<ImuOrientationNode>());
     rclcpp::shutdown();
