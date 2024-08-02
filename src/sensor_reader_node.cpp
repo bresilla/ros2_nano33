@@ -17,7 +17,9 @@ class SensorReaderNode : public rclcpp::Node {
         rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr ori_pub_;
         int serial_fd_;
         std::thread reader_thread_;
-        float gate = 1.0;
+        float gate_g = 5.0;
+        float gate_a = 0.1;
+        float gate_m = 0.1;
 
     public:
         SensorReaderNode() : Node("sensor_reader_node") {
@@ -104,33 +106,33 @@ class SensorReaderNode : public rclcpp::Node {
                 if (iss.fail()) {
                     RCLCPP_ERROR(this->get_logger(), "Failed to parse gyroscope data: '%s'", line.c_str());
                 } else {
-                    if (abs(data[0]) < gate) data[0] = 0;
-                    if (abs(data[1]) < gate) data[1] = 0;
-                    if (abs(data[2]) < gate) data[2] = 0;
+                    if (abs(data[0]) < gate_g) data[0] = 0;
+                    if (abs(data[1]) < gate_g) data[1] = 0;
+                    if (abs(data[2]) < gate_g) data[2] = 0;
                     msg.data = data;
                     gyro_pub_->publish(msg);
-                    RCLCPP_INFO(this->get_logger(), "Gyro: %.2f %.2f %.2f", data[0], data[1], data[2]);
+                    // RCLCPP_INFO(this->get_logger(), "Gyro: %.2f %.2f %.2f", data[0], data[1], data[2]);
                 }
             } else if (sensor == "Magnetometer:") {
                 iss >> data[0] >> data[1] >> data[2];
                 if (iss.fail()) {
                     RCLCPP_ERROR(this->get_logger(), "Failed to parse magnetometer data: '%s'", line.c_str());
                 } else {
-                    if (abs(data[0]) < gate) data[0] = 0;
-                    if (abs(data[1]) < gate) data[1] = 0;
-                    if (abs(data[2]) < gate) data[2] = 0;
+                    if (abs(data[0]) < gate_m) data[0] = 0;
+                    if (abs(data[1]) < gate_m) data[1] = 0;
+                    if (abs(data[2]) < gate_m) data[2] = 0;
                     msg.data = data;
                     mag_pub_->publish(msg);
-                    RCLCPP_INFO(this->get_logger(), "Mag: %.2f %.2f %.2f", data[0], data[1], data[2]);
+                    // RCLCPP_INFO(this->get_logger(), "Mag: %.2f %.2f %.2f", data[0], data[1], data[2]);
                 }
             } else if (sensor == "Acceleration:") {
                 iss >> data[0] >> data[1] >> data[2];
                 if (iss.fail()) {
                     RCLCPP_ERROR(this->get_logger(), "Failed to parse acceleration data: '%s'", line.c_str());
                 } else {
-                    if (abs(data[0]) < gate) data[0] = 0;
-                    if (abs(data[1]) < gate) data[1] = 0;
-                    if (abs(data[2]) < gate) data[2] = 0;
+                    if (abs(data[0]) < gate_a) data[0] = 0;
+                    if (abs(data[1]) < gate_a) data[1] = 0;
+                    if (abs(data[2]) < gate_a) data[2] = 0;
                     msg.data = data;
                     acc_pub_->publish(msg);
                     RCLCPP_INFO(this->get_logger(), "Acc: %.2f %.2f %.2f", data[0], data[1], data[2]);
@@ -142,7 +144,7 @@ class SensorReaderNode : public rclcpp::Node {
                 } else {
                     msg.data = data;
                     ori_pub_->publish(msg);
-                    RCLCPP_INFO(this->get_logger(), "Ori: %.2f %.2f %.2f", data[0], data[1], data[2]);
+                    // RCLCPP_INFO(this->get_logger(), "Ori: %.2f %.2f %.2f", data[0], data[1], data[2]);
                 }
             } else {
                 RCLCPP_WARN(this->get_logger(), "Unknown sensor type: '%s'", line.c_str());
