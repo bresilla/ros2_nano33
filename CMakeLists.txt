@@ -40,4 +40,10 @@ install(TARGETS
   imu_publisher_raw
   DESTINATION lib/${PROJECT_NAME})
 
+install(
+  DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+
 ament_package()
