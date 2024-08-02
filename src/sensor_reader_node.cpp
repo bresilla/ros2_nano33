@@ -32,7 +32,7 @@ class SensorReaderNode : public rclcpp::Node {
             if (!setupSerial(port, B115200)) {
                 RCLCPP_ERROR(this->get_logger(), "Failed to open serial port!");
                 rclcpp::shutdown();
-            } else {
+            } else { 
                 reader_thread_ = std::thread(&SensorReaderNode::readSerialData, this);
             }
         }
