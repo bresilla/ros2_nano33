@@ -28,7 +28,7 @@ class SensorReaderNode : public rclcpp::Node {
             acc_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("acc", 10);
             ori_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("ori", 10);
 
-            std::string port = "/dev/ttyACM0";  // Update with your serial port
+            std::string port = "/dev/nano33ble";  // Update with your serial port
             if (!setupSerial(port, B115200)) {
                 RCLCPP_ERROR(this->get_logger(), "Failed to open serial port!");
                 rclcpp::shutdown();
