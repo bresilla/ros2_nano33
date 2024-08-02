@@ -93,6 +93,64 @@ and publishes the data to the corresponding topics.
 
 The `imu_publisher_node` subscribes to the `/gyro`, `/mag`, and `/acc` topics, aggregates the sensor data, and publishes it as a `sensor_msgs/msg/Imu` message.
 
+
+## Make so the sensor can be at specific path
+
+
+### 1. Identify the Device Attributes
+
+First, connect your Arduino Nano 33 BLE to your computer and run the following command to list its attributes:
+
+```bash
+udevadm info --name=/dev/ttyACM0 --attribute-walk
+```
+
+Look for the attributes of the device, such as `idVendor`, `idProduct`, and `product`. For the Arduino Nano 33 BLE, these typically are:
+
+```plaintext
+ATTRS{idVendor}=="2341"
+ATTRS{idProduct}=="805a"
+ATTRS{product}=="Nano 33 BLE"
+```
+
+### 2. Create a Udev Rules File
+
+Create a new udev rules file using the command:
+
+```bash
+sudo nano /etc/udev/rules.d/99-arduino-nano-33-ble.rules
+```
+
+### 3. Add the Udev Rule
+
+Add the following line to the file to create a symbolic link `/dev/nano33ble`:
+
+```plaintext
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="805a", ATTRS{product}=="Nano 33 BLE", SYMLINK+="nano33ble"
+```
+
+Save the file and exit the editor (`Ctrl+X`, then `Y`, and `Enter`).
+
+### 4. Reload Udev Rules
+
+Reload the udev rules to apply the changes:
+
+```bash
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+### 5. Verify the Symbolic Link
+
+Unplug and reconnect your Arduino Nano 33 BLE, then verify that the symbolic link has been created:
+
+```bash
+ls -l /dev/nano33ble
+```
+
+You should see output indicating that the symbolic link points to the correct device file (e.g., `ttyACM0`).
+
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
