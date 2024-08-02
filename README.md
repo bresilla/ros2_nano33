@@ -70,15 +70,20 @@ The `ros2_nano33` package reads data from a serial port connected to a sensor mo
 
 2. **Run the IMU publisher node**:
    ```sh
-   ros2 run ros2_nano33 imu_publisher_node
+   ros2 run ros2_nano33 imu_publisher_raw
+   ```
+   or
+   ```sh
+   ros2 run ros2_nano33 imu_publisher_euler
    ```
 
 ## Configuration
 
-Update the serial port and baud rate in `sensor_reader_node.cpp` if needed:
+Update the serial port and baud rate in `sensor_reader_node.cpp` if needed or just jump to Sensor Reading part where you can find how to read the sensor data from the Arduino Nano 33 BLE Sense board without super user permissions and create a symbolic link to the device file.
+
 ```cpp
 std::string port = "/dev/ttyUSB0";  // Update with your serial port
-unsigned long baud = 9600;  // Update with your baud rate
+unsigned long baud = 115200;        // Update with your baud rate
 ```
 
 ## Example Output
@@ -94,7 +99,9 @@ and publishes the data to the corresponding topics.
 The `imu_publisher_node` subscribes to the `/gyro`, `/mag`, and `/acc` topics, aggregates the sensor data, and publishes it as a `sensor_msgs/msg/Imu` message.
 
 
-## Make so the sensor can be at specific path
+## Sensor reading
+
+To read the sensor data from the Arduino Nano 33 BLE Sense board without super user permissions, you can create a udev rule to create a symbolic link to the device file.
 
 
 ### 1. Identify the Device Attributes
@@ -113,6 +120,12 @@ ATTRS{idProduct}=="805a"
 ATTRS{product}=="Nano 33 BLE"
 ```
 
+You can use this command to get those informations:
+
+```bash
+udevadm info --name=/dev/ttyACM0 | grep -E 'ID_VENDOR_ID|ID_MODEL_ID|ID_MODEL'
+```
+
 ### 2. Create a Udev Rules File
 
 Create a new udev rules file using the command:
@@ -126,12 +139,20 @@ sudo nano /etc/udev/rules.d/99-arduino-nano-33-ble.rules
 Add the following line to the file to create a symbolic link `/dev/nano33ble`:
 
 ```plaintext
-SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="805a", ATTRS{product}=="Nano 33 BLE", SYMLINK+="nano33ble"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="805a", ATTRS{product}=="Nano 33 BLE", SYMLINK+="nano33ble", MODE="0666", GROUP="dialout"
 ```
 
 Save the file and exit the editor (`Ctrl+X`, then `Y`, and `Enter`).
 
-### 4. Reload Udev Rules
+### 4. Make user part of the dialout group
+
+Add your user to the `dialout` group to access the serial port without super user permissions:
+
+```bash
+sudo usermod -a -G dialout $USER
+```
+
+### 5. Reload Udev Rules
 
 Reload the udev rules to apply the changes:
 
@@ -140,7 +161,7 @@ sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
 
-### 5. Verify the Symbolic Link
+### 6. Verify the Symbolic Link
 
 Unplug and reconnect your Arduino Nano 33 BLE, then verify that the symbolic link has been created:
 
@@ -155,12 +176,8 @@ You should see output indicating that the symbolic link points to the correct de
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request.
 
 ## Acknowledgments
 
 - Thanks to the [ROS 2 community](https://discourse.ros.org/) for their support.
 - This package was inspired by the [Arduino Nano 33 BLE Sense](https://store.arduino.cc/usa/nano-33-ble-sense) board.
-- [Libserial](https://github.com/crayzeewulf/libserial) is used to read data from the serial port.
