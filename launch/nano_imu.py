@@ -8,14 +8,14 @@ def generate_launch_description():
 
     ld.add_action(Node(
         package='ros2_nano33',
-        executable='sensor_reader_node',
+        executable='sensor_reader',
         output="screen",
         emulate_tty=True,
     ))
 
     ld.add_action(Node(
         package='ros2_nano33',
-        executable='imu_publisher_raw',
+        executable='imu_publisher',
         output="screen",
         emulate_tty=True,
     ))
