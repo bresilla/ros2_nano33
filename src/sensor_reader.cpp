@@ -23,16 +23,16 @@ class SensorReaderNode : public rclcpp::Node {
 
     public:
         SensorReaderNode() : Node("sensor_reader_node") {
-            gyro_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("gyro", 10);
-            mag_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("mag", 10);
-            acc_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("acc", 10);
-            ori_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("ori", 10);
+            gyro_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/nano33/gyro", 10);
+            mag_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/nano33/mag", 10);
+            acc_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/nano33/accel", 10);
+            ori_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/nano33/ori", 10);
 
             std::string port = "/dev/nano33ble";  // Update with your serial port
             if (!setupSerial(port, B115200)) {
                 RCLCPP_ERROR(this->get_logger(), "Failed to open serial port!");
                 rclcpp::shutdown();
-            } else { 
+            } else {
                 reader_thread_ = std::thread(&SensorReaderNode::readSerialData, this);
             }
         }
@@ -111,7 +111,7 @@ class SensorReaderNode : public rclcpp::Node {
                     if (abs(data[2]) < gate_g) data[2] = 0;
                     msg.data = data;
                     gyro_pub_->publish(msg);
-                    // RCLCPP_INFO(this->get_logger(), "Gyro: %.2f %.2f %.2f", data[0], data[1], data[2]);
+                    RCLCPP_INFO(this->get_logger(), "Gyro: %.2f %.2f %.2f", data[0], data[1], data[2]);
                 }
             } else if (sensor == "Magnetometer:") {
                 iss >> data[0] >> data[1] >> data[2];
@@ -123,7 +123,7 @@ class SensorReaderNode : public rclcpp::Node {
                     if (abs(data[2]) < gate_m) data[2] = 0;
                     msg.data = data;
                     mag_pub_->publish(msg);
-                    // RCLCPP_INFO(this->get_logger(), "Mag: %.2f %.2f %.2f", data[0], data[1], data[2]);
+                    RCLCPP_INFO(this->get_logger(), "Mag: %.2f %.2f %.2f", data[0], data[1], data[2]);
                 }
             } else if (sensor == "Acceleration:") {
                 iss >> data[0] >> data[1] >> data[2];

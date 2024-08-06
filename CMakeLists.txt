@@ -16,6 +16,23 @@ find_package(sensor_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 
+find_package(Eigen3 REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+set(system_libs
+    ${Eigen_LIBRARIES}
+    ${OpenCV_LIBS}
+)
+
+
+add_executable(sensor_reader src/sensor_reader.cpp)
+ament_target_dependencies(sensor_reader rclcpp std_msgs)
+target_link_libraries(sensor_reader ${system_libs})
+
+add_executable(imu_publisher src/imu_publisher.cpp)
+ament_target_dependencies(imu_publisher rclcpp std_msgs sensor_msgs tf2 tf2_ros)
+target_link_libraries(imu_publisher ${system_libs})
+
 include_directories(
     include
     ${tf2_ros_INCLUDE_DIRS}
@@ -25,19 +42,9 @@ include_directories(
     ${tf2_INCLUDE_DIRS}
 )
 
-add_executable(sensor_reader_node src/sensor_reader_node.cpp)
-ament_target_dependencies(sensor_reader_node rclcpp std_msgs)
-
-add_executable(imu_publisher_euler src/imu_publisher_euler.cpp)
-ament_target_dependencies(imu_publisher_euler rclcpp std_msgs sensor_msgs tf2 tf2_ros)
-
-add_executable(imu_publisher_raw src/imu_publisher_raw.cpp)
-ament_target_dependencies(imu_publisher_raw rclcpp std_msgs sensor_msgs tf2 tf2_ros)
-
 install(TARGETS
-  sensor_reader_node
-  imu_publisher_euler
-  imu_publisher_raw
+  sensor_reader
+  imu_publisher
   DESTINATION lib/${PROJECT_NAME})
 
 install(
